@@ -1,112 +1,190 @@
-const fs = require("fs");
-const readline = require("readline");
+const { constructPheromoneMatrix, calculateCostOfPath } = require("./matrix");
+const { sumArray, getRandomIndex } = require("./utils");
 
-const readFile = async (filename, onReadLine) => {
-  const fileStream = fs.createReadStream(filename);
+const antColony = (adjaencyMatrix, config) => {
+  const {
+    initialPheromoneValue,
+    alpha,
+    beta,
+    evaporation,
+    iterations,
+    randomFator,
+    numberOfAnts,
+    startingPoint,
+  } = config;
 
-  const rl = readline.createInterface({
-    input: fileStream,
-    crlfDelay: Infinity,
-  });
-  // Note: we use the crlfDelay option to recognize all instances of CR LF
-  // ('\r\n') in input.txt as a single line break.
+  const pheromoneMatrix = constructPheromoneMatrix(
+    adjaencyMatrix,
+    initialPheromoneValue
+  );
 
-  for await (const line of rl) {
-    // Each line in input.txt will be successively available here as `line`.
-    onReadLine(line);
+  for (let iteration = 0; iteration <= iterations; iteration++) {
+    const walkedPaths = antsWalking(
+      numberOfAnts,
+      adjaencyMatrix,
+      pheromoneMatrix,
+      startingPoint,
+      alpha,
+      beta,
+      randomFator
+    );
+
+    const pathWithCosts = walkedPaths.map((path) => ({
+      path,
+      cost: calculateCostOfPath(path, adjaencyMatrix),
+    }));
+
+    updatePheromones(pheromoneMatrix, pathWithCosts, evaporation);
+
+    if (iteration % 100 === 0) {
+      console.log(`ITERATION: ${iteration} \n`);
+      console.log(pathWithCosts.map((p) => p.cost));
+    }
   }
 };
 
-const cities = [];
-
-readFile("cities.txt", (line) => {
-  const [index, name, demand, lat, lon] = line.split(" ");
-  if (index < 6) {
-    cities.push({
-      index: parseInt(index),
-      name,
-      demand: parseInt(demand),
-      lat: parseFloat(lat),
-      lon: parseFloat(lon),
-    });
-  }
-}).then(() => {
-  const adjaencyMatrix = constructCompleteWeightedGraph(cities);
-  console.log(ACO(cities, adjaencyMatrix));
-});
-
-const constructCompleteWeightedGraph = (cities) => {
-  graph = [];
-  cities.forEach((city) => {
-    graph[city.index] = [];
-    cities.forEach((city2) => {
-      graph[city.index][city2.index] = distance(
-        city.lat,
-        city.lon,
-        city2.lat,
-        city2.lon
-      );
-    });
-  });
-
-  return graph;
-};
-
-const ACO = (cities, citiesAdjaencyMatrix) => {
-  const alfa = 3;
-  const beta = 2;
-  const antsNumber = 5;
-  const homeBase = "Kraków";
-  const homeBaseIndex = cities.find(({ name }) => name === "Kraków");
+const antsWalking = (
+  antsNumber,
+  adjaencyMatrix,
+  pheromoneMatrix,
+  startingPoint,
+  alpha,
+  beta,
+  randomFactor
+) => {
   const antsPaths = [];
-  const pheromoneMatrix = [];
-//   console.log(citiesAdjaencyMatrix)
 
-  for (let index = 0; index <= cities.length - 1; index++) {
-    antsPaths.push([])
-    while (antsPaths[index].length < cities.length - 1) {
-      if (!antsPaths[index].length) {
-        antsPaths[index].push(homeBaseIndex);
-      }
-      const currentPosition = antsPaths[index][antsPaths[index].length - 1];
-      const possibleSelection = citiesAdjaencyMatrix[currentPosition.index].filter(v => v !== 0);
-      const randomlySelectedCity = randomPick(possibleSelection);
-      if (!antsPaths[index].map(c => c.index).includes(randomlySelectedCity)) {
-        antsPaths[index].push(cities.find(({ index }) => index === randomlySelectedCity));
-      }
+  for (let ant = 0; ant < antsNumber; ant++) {
+    if (!antsPaths[ant]) {
+      antsPaths[ant] = [startingPoint];
+    }
+
+    while (antsPaths[ant].length < adjaencyMatrix.length - 1) {
+      const currentAntPath = antsPaths[ant];
+      const currentAntPosition = currentAntPath[currentAntPath.length - 1];
+
+      const possibleDirections = getAntPossibleDirections(
+        currentAntPosition,
+        adjaencyMatrix,
+        pheromoneMatrix
+      );
+
+      const pickedCity = pickCity(
+        possibleDirections,
+        antsPaths[ant],
+        alpha,
+        beta,
+        randomFactor
+      );
+
+      antsPaths[ant].push(pickedCity);
     }
   }
 
-  const pathCosts = antsPaths.map(antPath => {
-    let cost = 0
-    for (let index = 0; index < antPath.length - 1; index++) {
-        const city = antPath[index];
-        const nextCity = antPath[index + 1]
-        cost += citiesAdjaencyMatrix[city.index][nextCity.index];
+  return antsPaths;
+};
+
+const getAntPossibleDirections = (
+  antPosition,
+  adjaencyMatrix,
+  pheromoneMatrix
+) =>
+  adjaencyMatrix[antPosition].map((cost, index) => ({
+    cost,
+    index,
+    pheromone: pheromoneMatrix[antPosition][index],
+  }));
+
+
+const pickCity = (
+  possibleDirections,
+  currentAntPath,
+  alpha = 0.5,
+  beta = 1.5,
+  randomFactor = 0.15
+) => {
+  const selection = possibleDirections.filter(
+    ({ cost, index }) => cost !== 0 && !currentAntPath.includes(index)
+  );
+
+  if (Math.random() <= randomFactor) {
+    return getRandomIndex(selection);
+  }
+
+  const pickProbability = selection.map(
+    ({ cost, index: position, pheromone }) => {
+      if (cost === 0) {
+        return 0;
+      }
+      const pheromoneValue = Math.pow(pheromone, alpha);
+
+      const costValue = 1 / Math.pow(cost, beta);
+
+      const denominator = possibleDirections.reduce(
+        (acc, { cost, pheromone }) => {
+          if (cost === 0) {
+            return acc;
+          }
+          const denominatorValue =
+            Math.pow(pheromone, alpha) * Math.pow(1 / cost, beta);
+          return acc + denominatorValue;
+        },
+        0
+      );
+
+      return {
+        index: position,
+        probability: Math.round(
+          ((pheromoneValue * costValue) / denominator) * 100
+        ),
+      };
     }
-    return { cities: antPath.map(c => c.index), cost };
-  })
+  );
 
-  return pathCosts;
+  return rouletteWheel(pickProbability);
 };
 
-const randomPick = (array) => Math.floor(Math.random() * array.length);
+const rouletteWheel = (probabilityArray) => {
+  const sortedProbabilityArray = probabilityArray.sort(
+    (a, b) => b.probability - a.probability
+  );
 
-const distance = (lat1, lon1, lat2, lon2) => {
-  const deg2rad = (deg) => {
-    return deg * (Math.PI / 180);
-  };
+  const cumulativeProbability = sortedProbabilityArray.map(
+    ({ index }, position) => {
+      return {
+        index,
+        probability: sumArray(
+          sortedProbabilityArray.slice(position).map((pick) => pick.probability)
+        ),
+      };
+    }
+  );
 
-  const R = 6371; // Radius of the earth in km
-  const dLat = deg2rad(lat2 - lat1); // deg2rad below
-  const dLon = deg2rad(lon2 - lon1);
-  const a =
-    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos(deg2rad(lat1)) *
-      Math.cos(deg2rad(lat2)) *
-      Math.sin(dLon / 2) *
-      Math.sin(dLon / 2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  const d = R * c; // Distance in km
-  return parseFloat(d.toFixed(1));
+  const max = cumulativeProbability[0].probability;
+  const randomValue = Math.floor(Math.random() * max);
+  for (let index = 0; index < cumulativeProbability.length; index++) {
+    const probability = cumulativeProbability[index].probability;
+    if (cumulativeProbability[index + 1]) {
+      const nextStepProbability = cumulativeProbability[index + 1].probability;
+      if (probability <= randomValue && randomValue > nextStepProbability) {
+        return cumulativeProbability[index].index;
+      }
+    }
+    return cumulativeProbability[index].index;
+  }
 };
+
+const updatePheromones = (pheromoneMatrix, antPaths, evaporation = 0.9) => {
+  antPaths.forEach((road) => {
+    const { path, cost } = road;
+    const antPheromone = 1 / cost;
+    for (let index = 0; index < path.length - 1; index++) {
+      const node1 = path[index];
+      const node2 = path[index + 1];
+      pheromoneMatrix[node1][node2] =
+        pheromoneMatrix[node1][node2] * evaporation + antPheromone;
+    }
+  });
+};
+
+module.exports = antColony;
