@@ -18,7 +18,6 @@ const antColony = (adjaencyMatrix, config) => {
     initialPheromoneValue
   );
 
-  
   let bestPath = { cost: Number.MAX_SAFE_INTEGER, path: [] };
 
   for (let iteration = 0; iteration <= iterations; iteration++) {
@@ -29,7 +28,7 @@ const antColony = (adjaencyMatrix, config) => {
       startingPoint,
       alpha,
       beta,
-      iteration === 0 ? 1 : randomFactor,
+      iteration === 0 ? 1 : randomFactor
     );
 
     const pathWithCosts = walkedPaths.map((path) => ({
@@ -37,9 +36,9 @@ const antColony = (adjaencyMatrix, config) => {
       cost: calculateCostOfPath(path, adjaencyMatrix),
     }));
 
-    const candidate = pathWithCosts.find(p => p.cost < bestPath.cost);
+    const candidate = pathWithCosts.find((p) => p.cost < bestPath.cost);
     if (candidate) {
-     bestPath = candidate;
+      bestPath = candidate;
     }
 
     updatePheromones(pheromoneMatrix, pathWithCosts, evaporation);
@@ -51,8 +50,9 @@ const antColony = (adjaencyMatrix, config) => {
   }
 
   console.log(bestPath, "bestpath");
-  console.log(bestPath.path.length === [...new Set([...bestPath.path])].length)
+  console.log(bestPath.path.length === [...new Set([...bestPath.path])].length);
   console.log(bestPath.path.length === adjaencyMatrix.length);
+  return bestPath;
 };
 
 const antsWalking = (
@@ -62,7 +62,7 @@ const antsWalking = (
   startingPoint,
   alpha,
   beta,
-  randomFactor,
+  randomFactor
 ) => {
   const antsPaths = [];
 
@@ -107,27 +107,25 @@ const getAntPossibleDirections = (
     pheromone: pheromoneMatrix[antPosition][index],
   }));
 
-
 const pickCity = (
   possibleDirections,
   currentAntPath,
   alpha,
   beta,
-  randomFactor,
+  randomFactor
 ) => {
   const selection = possibleDirections.filter(
-    ({ cost, index }) => cost !== 0 && !currentAntPath.includes(index)
+    ({ index }) => !currentAntPath.includes(index)
   );
 
   if (Math.random() < randomFactor) {
-    return selection[getRandomIndex(selection)].index;
+    return selection[
+      getRandomIndex(selection.filter((s) => s.cost !== Number.MAX_VALUE))
+    ].index;
   }
 
   const pickProbability = selection.map(
     ({ cost, index: position, pheromone }) => {
-      if (cost === 0) {
-        return 0;
-      }
       const pheromoneValue = Math.pow(pheromone, alpha);
 
       const costValue = 1 / Math.pow(cost, beta);
@@ -188,8 +186,13 @@ const rouletteWheel = (probabilityArray) => {
 
 const updatePheromones = (pheromoneMatrix, antPaths, evaporation = 0.9) => {
   for (let row = 0; row < pheromoneMatrix.length; row++) {
-    for (let pheromone = 0; pheromone < pheromoneMatrix[row].length; pheromone++) {
-      pheromoneMatrix[row][pheromone] = (1 - evaporation) * pheromoneMatrix[row][pheromone]
+    for (
+      let pheromone = 0;
+      pheromone < pheromoneMatrix[row].length;
+      pheromone++
+    ) {
+      pheromoneMatrix[row][pheromone] =
+        (1 - evaporation) * pheromoneMatrix[row][pheromone];
     }
   }
 

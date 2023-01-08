@@ -19,7 +19,7 @@ const constructDistanceGraph = (cities) => {
         city.lon,
         city2.lat,
         city2.lon
-      );
+      ) || Number.MAX_VALUE;
     });
   });
 

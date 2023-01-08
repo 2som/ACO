@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+    <!-- base href="https://leafletjs.com/examples/quick-start/example.html" -->
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Quick Start - Leaflet</title>
+
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css"
+      integrity="sha256-kLaT2GOSpHechhsozzB+flnD+zUyjE2LlfWPgU04xyI="
+      crossorigin=""
+    />
+
+    <script
+      src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"
+      integrity="sha256-WBkoXOwTeyKclOHuWtc+i2uENFpDZ9YPdf5Hf+D7ewM="
+      crossorigin=""
+    ></script>
+
+    <style>
+      html,
+      body {
+        height: 100%;
+        margin: 0;
+      }
+      .leaflet-container {
+        height: 900px;
+        width: 1200px;
+      }
+    </style>
+  </head>
+  <body cz-shortcut-listen="true" class="">
+    <div
+      id="map"
+      style="position: relative"
+      class="leaflet-container leaflet-touch leaflet-fade-anim leaflet-grab leaflet-touch-drag leaflet-touch-zoom"
+      tabindex="0"
+    ></div>
+    <div id="cost" style="text-align: center; width: 100%;">KOSZT W KILOMETRACH </div>
+    <script type="text/javascript">
+      fetch("./paths.json")
+        .then((res) => res.json())
+        .then(({ locations, cost }) => {
+          const map = L.map("map").setView([50.06, 19.94], 6);
+          L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
+            maxZoom: 19,
+            attribution:
+              '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+          }).addTo(map);
+          locations.forEach((location) => L.marker(location).addTo(map));
+          const polyline = L.polyline(locations, { color: "blue" }).addTo(map);
+          document.getElementById('cost').innerHTML += cost;
+        });
+    </script>
+  </body>
+</html>
