@@ -21,7 +21,7 @@ const antColony = (adjaencyMatrix, config) => {
   let bestPath = { cost: Number.MAX_SAFE_INTEGER, path: [] };
 
   for (let iteration = 0; iteration <= iterations; iteration++) {
-    const walkedPaths = antsWalking(
+    const pathsWithCosts = antsWalking(
       numberOfAnts,
       adjaencyMatrix,
       pheromoneMatrix,
@@ -31,21 +31,16 @@ const antColony = (adjaencyMatrix, config) => {
       iteration === 0 ? 1 : randomFactor
     );
 
-    const pathWithCosts = walkedPaths.map((path) => ({
-      path,
-      cost: calculateCostOfPath(path, adjaencyMatrix),
-    }));
-
-    const candidate = pathWithCosts.find((p) => p.cost < bestPath.cost);
+    const candidate = pathsWithCosts.find((p) => p.cost < bestPath.cost);
     if (candidate) {
       bestPath = candidate;
     }
 
-    updatePheromones(pheromoneMatrix, pathWithCosts, evaporation);
+    evaporate(pheromoneMatrix, evaporation);
 
-    if (iteration % 100 === 0) {
+    if (iteration % 10 === 0) {
       console.log(`ITERATION: ${iteration} \n`);
-      console.log(pathWithCosts.map((p) => p.cost));
+      console.log(pathsWithCosts.map((p) => p.cost));
     }
   }
 
@@ -65,14 +60,13 @@ const antsWalking = (
   randomFactor
 ) => {
   const antsPaths = [];
-
   for (let ant = 0; ant < antsNumber; ant++) {
     if (!antsPaths[ant]) {
-      antsPaths[ant] = [startingPoint];
+      antsPaths[ant] = { path: [startingPoint], cost: 0 };
     }
 
-    while (antsPaths[ant].length !== adjaencyMatrix.length) {
-      const currentAntPath = antsPaths[ant];
+    while (antsPaths[ant].path.length !== adjaencyMatrix.length) {
+      const currentAntPath = antsPaths[ant].path;
       const currentAntPosition = currentAntPath[currentAntPath.length - 1];
 
       const possibleDirections = getAntPossibleDirections(
@@ -83,14 +77,17 @@ const antsWalking = (
 
       const pickedCity = pickCity(
         possibleDirections,
-        antsPaths[ant],
+        currentAntPath,
         alpha,
         beta,
         randomFactor
       );
 
-      antsPaths[ant].push(pickedCity);
+      currentAntPath.push(pickedCity);
+      antsPaths[ant].cost = calculateCostOfPath(currentAntPath, adjaencyMatrix);
     }
+
+    updatePheromones(pheromoneMatrix, antsPaths[ant]);
   }
 
   return antsPaths;
@@ -184,27 +181,38 @@ const rouletteWheel = (probabilityArray) => {
   }
 };
 
-const updatePheromones = (pheromoneMatrix, antPaths, evaporation = 0.9) => {
+const evaporate = (pheromoneMatrix, evaporation = 0.01) => {
   for (let row = 0; row < pheromoneMatrix.length; row++) {
     for (
-      let pheromone = 0;
-      pheromone < pheromoneMatrix[row].length;
-      pheromone++
+      let col = 0;
+      col < pheromoneMatrix[row].length;
+      col++
     ) {
-      pheromoneMatrix[row][pheromone] =
-        (1 - evaporation) * pheromoneMatrix[row][pheromone];
+      pheromoneMatrix[row][col] =
+        (1 - evaporation) * pheromoneMatrix[row][col];
     }
   }
+} 
 
-  antPaths.forEach((road) => {
-    const { path, cost } = road;
-    const antPheromone = 1 / cost;
-    for (let index = 0; index < path.length - 1; index++) {
-      const node1 = path[index];
-      const node2 = path[index + 1];
-      pheromoneMatrix[node1][node2] += antPheromone;
-    }
-  });
-};
+const updatePheromones = (pheromoneMatrix, antPath) => {
+  const { path, cost } = antPath;
+  const antPheromone = 1 / cost;
+  for (let index = 0; index < path.length - 1; index++) {
+    const node1 = path[index];
+    const node2 = path[index + 1];
+    pheromoneMatrix[node1][node2] += antPheromone;
+  }
+}
 
 module.exports = antColony;
+
+
+// PROBLEM:
+// 30 ciezarowek, kazda ma pojemnosc  1000
+// optymalna droga dla kazdej ciezarowki, zeby zminimalizowac sume drog pokonanych przez wszystkie samochody
+
+// CEL:
+// Jak najmniejsza suma dróg pokonanych przez wszystkie samochody
+
+// idziemy z krakowa 
+

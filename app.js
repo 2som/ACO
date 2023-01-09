@@ -17,13 +17,19 @@ readFile("cities.txt", (line) => {
     lon: parseFloat(lon),
   });
 }).then(() => {
+  const start = new Date();
   const adjaencyMatrix = constructDistanceGraph(cities);
-  const bestPath = antColony(adjaencyMatrix, config);
-  fs.writeFileSync(
-    "paths.json",
-    JSON.stringify(displayCoordinates(bestPath, cities)),
-    "utf8"
-  );
+
+  console.log(adjaencyMatrix[0]);
+  
+  // const bestPath = antColony(adjaencyMatrix, config);
+  // fs.writeFileSync(
+  //   "paths.json",
+  //   JSON.stringify(displayCoordinates(bestPath, cities)),
+  //   "utf8"
+  // );
+
+  // console.log(`EXECUTION TIME: ${new Date() - start}ms`)
 });
 
 const displayCoordinates = (bestPath, cities) => {
