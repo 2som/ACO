@@ -20,25 +20,42 @@ readFile("cities.txt", (line) => {
   const start = new Date();
   const adjaencyMatrix = constructDistanceGraph(cities);
 
-  console.log(adjaencyMatrix[0]);
-  
-  // const bestPath = antColony(adjaencyMatrix, config);
-  // fs.writeFileSync(
-  //   "paths.json",
-  //   JSON.stringify(displayCoordinates(bestPath, cities)),
-  //   "utf8"
-  // );
+  const demandsArray = cities.map((c) => c.demand);
+
+  const bestPath = antColony(adjaencyMatrix, config, demandsArray);
+
+  const pathsPerAnt = [];
+
+  let currentAntPath = [];
+  bestPath.path.forEach((city) => {
+    if (city === 30) {
+      pathsPerAnt.push(currentAntPath);
+      currentAntPath = [];
+    }
+    currentAntPath.push(city);
+  });
+
+  fs.writeFileSync(
+    "paths.json",
+    JSON.stringify(displayCoordinates(pathsPerAnt, bestPath.cost, cities)),
+    "utf8"
+  );
 
   // console.log(`EXECUTION TIME: ${new Date() - start}ms`)
 });
 
-const displayCoordinates = (bestPath, cities) => {
-  const { path, cost } = bestPath;
+const displayCoordinates = (pathsPerAnt, cost, cities) => {
+  const mapped = pathsPerAnt.map((path) => {
+    return {
+      locations: path.map((p) => {
+        const city = cities.find((c) => c.index === p);
+        return [city.lat, city.lon];
+      }),
+    };
+  });
+
   return {
-    locations: path.map((p) => {
-      const city = cities.find((c) => c.index === p);
-      return [city.lat, city.lon];
-    }),
+    paths: mapped,
     cost,
   };
 };

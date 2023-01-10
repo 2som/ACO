@@ -44,15 +44,18 @@
     <script type="text/javascript">
       fetch("./paths.json")
         .then((res) => res.json())
-        .then(({ locations, cost }) => {
+        .then(({ paths, cost }) => {
           const map = L.map("map").setView([50.06, 19.94], 6);
           L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
             maxZoom: 19,
             attribution:
               '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>',
           }).addTo(map);
-          locations.forEach((location) => L.marker(location).addTo(map));
-          const polyline = L.polyline(locations, { color: "blue" }).addTo(map);
+          const colors = ["blue", "red", "yellow", "green", "black", "orange"]
+          // console.log(paths);
+          paths.forEach((path, index) => {
+            L.polyline(path.locations, { color: colors[index] }).addTo(map)
+          });
           document.getElementById('cost').innerHTML += cost;
         });
     </script>
