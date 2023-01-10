@@ -16,7 +16,7 @@ const antColony = (adjaencyMatrix, config, demandsArray) => {
   const pheromoneMatrix = constructPheromoneMatrix(
     adjaencyMatrix,
     initialPheromoneValue
-  );
+  ); 
 
   let bestPath = { cost: Number.MAX_SAFE_INTEGER, path: [] };
 
@@ -37,17 +37,10 @@ const antColony = (adjaencyMatrix, config, demandsArray) => {
       bestPath = candidate;
     }
 
+    // po skończeniu jednej iteracji feromon wyparowuje na wszystkich połączeniach
     evaporate(pheromoneMatrix, evaporation);
-
-    if (iteration % 10 === 0) {
-      console.log(`ITERATION: ${iteration} \n`);
-      console.log(pathsWithCosts.map((p) => p.cost));
-    }
   }
 
-  console.log(bestPath, "bestpath");
-  console.log(bestPath.path.length === [...new Set([...bestPath.path])].length);
-  console.log(bestPath.path.length === adjaencyMatrix.length);
   return bestPath;
 };
 
@@ -67,7 +60,7 @@ const antsWalking = (
     let antPathCost = 0;
     let antCapacity = 1000;
 
-    while ([...new Set([...antPath])].length !== adjaencyMatrix.length) {
+    while ([...new Set([...antPath])].length !== adjaencyMatrix.length) { //dopóki mrówka nie odwiedzi wszystkich miast
       const currentAntPosition = antPath[antPath.length - 1];
 
       const possibleDirections = getAntPossibleDirections(
@@ -76,6 +69,7 @@ const antsWalking = (
         pheromoneMatrix
       );
 
+      // miasto wybrane przez mrówkę
       const pickedCity = pickCity(
         antCapacity,
         demandsArray,
@@ -84,9 +78,11 @@ const antsWalking = (
         alpha,
         beta,
         randomFactor
-      );
+      ); 
+
 
       if (pickedCity === null) {
+        // jeśli mrówka nie może zaspokoić zapotrzebowania w żadnym z dostępnych miast to wracamy do bazy
         antPath.push(startingPoint);
         antCapacity = 1000;
       } else {
@@ -95,9 +91,10 @@ const antsWalking = (
         antCapacity -= demandsArray[pickedCity];
       }
     }
-    antPath.push(startingPoint);
-    antsPaths.push({ path: antPath, cost: antPathCost, capacity: antCapacity });
 
+    antPath.push(startingPoint);
+    // po skończeniu trasy przez mrówkę, dodajemy trasę do wszystkich tras ukończonych w jednej iteracji i aktualizujemy feromony na podstawie ścieżki wybranej przez mrówkę
+    antsPaths.push({ path: antPath, cost: antPathCost, capacity: antCapacity });
     updatePheromones(pheromoneMatrix, antsPaths[ant]);
   }
 
@@ -127,7 +124,7 @@ const pickCity = (
   const selection = possibleDirections.filter(
     ({ index }) =>
       !currentAntPath.includes(index) && demandsArray[index] <= antCapacity
-  );
+  ); // Odfiltruj miasta w których mrówka już była i miasta w których klienci oczekują więcej towaru niż mrówka obecnie posiada
 
   if (selection.length === 0) {
     return null;
@@ -139,6 +136,7 @@ const pickCity = (
     ].index;
   }
 
+  // Metaheurystyka wybór mrówki na podstawie wartości fermonu i długości trasy
   const pickProbability = selection.map(
     ({ cost, index: position, pheromone }) => {
       const pheromoneValue = Math.pow(pheromone, alpha);
@@ -166,7 +164,7 @@ const pickCity = (
     }
   );
 
-  return rouletteWheel(pickProbability);
+  return rouletteWheel(pickProbability); //wybór na podstawie skumulowanego prawdpodobieństwa
 };
 
 const rouletteWheel = (probabilityArray) => {
@@ -219,11 +217,3 @@ const updatePheromones = (pheromoneMatrix, antPath) => {
 
 module.exports = antColony;
 
-// PROBLEM:
-// 30 ciezarowek, kazda ma pojemnosc  1000
-// optymalna droga dla kazdej ciezarowki, zeby zminimalizowac sume drog pokonanych przez wszystkie samochody
-
-// CEL:
-// Jak najmniejsza suma dróg pokonanych przez wszystkie samochody
-
-// idziemy z krakowa
