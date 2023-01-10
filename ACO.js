@@ -171,7 +171,9 @@ const pickCity = (
   return rouletteWheel(pickProbability); //wybór na podstawie skumulowanego prawdpodobieństwa
 };
 
-const rouletteWheel = (probabilityArray) => {
+const rouletteWheel = (probabilityArray) => { // { index: number, probability: number}[]
+
+  // [{ index: 3, probability: 0.71 }, {index: 1, probability: 0.24 }, {index: 26, probability: 0.05}], 
   const sortedProbabilityArray = probabilityArray.sort(
     (a, b) => b.probability - a.probability
   );
@@ -187,8 +189,11 @@ const rouletteWheel = (probabilityArray) => {
     }
   );
 
-  const max = cumulativeProbability[0].probability;
-  const randomValue = Math.floor(Math.random() * max);
+  // [{ index: 3, probability: 1 }, {index: 1, probability: 0.29 }, {index: 26, probability: 0.05}], 
+  
+  const max = cumulativeProbability[0].probability; // 1
+  const randomValue = Math.floor(Math.random() * max); // losujemy losowa wartosc z przedzialu [0, 1] 
+
   for (let index = 0; index < cumulativeProbability.length; index++) {
     const probability = cumulativeProbability[index].probability;
     if (cumulativeProbability[index + 1]) {
@@ -199,6 +204,10 @@ const rouletteWheel = (probabilityArray) => {
     }
     return cumulativeProbability[index].index;
   }
+
+  // if  0.29 < wylosowany numer <=1 -> weź pierwszą wartość
+  // if  0.05 < wylosowany numer <= 0.29 -> weź drugą wartość
+  // if  wylosowany numer <= 0.05 -> weź trzecią wartość
 };
 
 const evaporate = (pheromoneMatrix, evaporation = 0.01) => {
