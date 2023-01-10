@@ -35,13 +35,15 @@ readFile("cities.txt", (line) => {
     currentAntPath.push(city);
   });
 
+  console.log(bestPath.path, "PATH")
+
   fs.writeFileSync(
     "paths.json",
     JSON.stringify(displayCoordinates(pathsPerAnt, bestPath.cost, cities)),
     "utf8"
   );
 
-  // console.log(`EXECUTION TIME: ${new Date() - start}ms`)
+  console.log(`EXECUTION TIME: ${new Date() - start}ms`)
 });
 
 const displayCoordinates = (pathsPerAnt, cost, cities) => {

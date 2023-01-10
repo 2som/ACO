@@ -145,7 +145,7 @@ const pickCity = (
 
       const costValue = 1 / Math.pow(cost, beta);
 
-      const distanceToBaseCity = Math.pow(1 / adjaencyMatrix[position][30], 15);
+      const distanceToBaseCity = Math.pow(1 / adjaencyMatrix[position][30], 2);
 
       const denominator = possibleDirections.reduce(
         (acc, { index, cost, pheromone }) => {
@@ -153,7 +153,7 @@ const pickCity = (
             return acc;
           }
           const denominatorValue =
-            Math.pow(pheromone, alpha) * Math.pow(1 / cost, beta) * Math.pow((1 /adjaencyMatrix[index][30]), 15);
+            Math.pow(pheromone, alpha) * Math.pow(1 / cost, beta) * Math.pow((1 /adjaencyMatrix[index][30]), 2);
           return acc + denominatorValue;
         },
         0
