@@ -42,10 +42,18 @@
     ></div>
     <div id="cost" style="text-align: center; width: 100%;">KOSZT W KILOMETRACH </div>
     <script type="text/javascript">
+       const map = L.map("map").setView([50.06, 19.94], 6);
+      fetch("./cities.json")
+        .then((res) => res.json())
+        .then(res => {
+          res.forEach(({latitude, longitude}) => {
+            L.marker([parseFloat(latitude), parseFloat(longitude)], { opacity: 0.4 }).addTo(map);
+          })
+        })
+
       fetch("./paths.json")
         .then((res) => res.json())
         .then(({ paths, cost }) => {
-          const map = L.map("map").setView([50.06, 19.94], 6);
           L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
             maxZoom: 19,
             attribution:

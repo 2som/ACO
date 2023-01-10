@@ -56,7 +56,7 @@ const antsWalking = (
 ) => {
   const antsPaths = [];
   for (let ant = 0; ant < antsNumber; ant++) {
-    const antPath = [startingPoint];
+    let antPath = [startingPoint];
     let antPathCost = 0;
     let antCapacity = 1000;
 
@@ -71,6 +71,7 @@ const antsWalking = (
 
       // miasto wybrane przez mrówkę
       const pickedCity = pickCity(
+        adjaencyMatrix,
         antCapacity,
         demandsArray,
         possibleDirections,
@@ -113,6 +114,7 @@ const getAntPossibleDirections = (
   }));
 
 const pickCity = (
+  adjaencyMatrix,
   antCapacity,
   demandsArray,
   possibleDirections,
@@ -143,13 +145,15 @@ const pickCity = (
 
       const costValue = 1 / Math.pow(cost, beta);
 
+      const distanceToBaseCity = Math.pow(1 / adjaencyMatrix[position][30], 15);
+
       const denominator = possibleDirections.reduce(
-        (acc, { cost, pheromone }) => {
+        (acc, { index, cost, pheromone }) => {
           if (cost === 0) {
             return acc;
           }
           const denominatorValue =
-            Math.pow(pheromone, alpha) * Math.pow(1 / cost, beta);
+            Math.pow(pheromone, alpha) * Math.pow(1 / cost, beta) * Math.pow((1 /adjaencyMatrix[index][30]), 15);
           return acc + denominatorValue;
         },
         0
@@ -158,7 +162,7 @@ const pickCity = (
       return {
         index: position,
         probability: Math.round(
-          ((pheromoneValue * costValue) / denominator) * 100
+          ((pheromoneValue * costValue * distanceToBaseCity) / denominator) * 100
         ),
       };
     }
